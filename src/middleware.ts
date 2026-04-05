@@ -42,13 +42,14 @@ export async function middleware(request: NextRequest) {
   // Logged in user: check profile
   const { data: profile, error: profileError } = await supabase
     .from('customer_profiles')
-    .select('full_name, phone_number, profile_completed')
+    .select('first_name, last_name, phone_number, profile_completed')
     .eq('id', user.id)
     .single()
 
   const isProfileComplete =
     !!profile &&
-    !!profile.full_name &&
+    !!profile.first_name &&
+    !!profile.last_name &&
     !!profile.phone_number &&
     profile.profile_completed === true
 

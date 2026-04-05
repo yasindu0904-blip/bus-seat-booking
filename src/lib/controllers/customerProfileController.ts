@@ -4,21 +4,23 @@ import { createCustomerProfileService } from '@/lib/services/customerProfileServ
 export async function createCustomerProfileController(request: NextRequest) {
   try {
     const body = await request.json()
-    const fullName = body.fullName?.trim()
+    const firstName = body.firstName?.trim()
+    const lastName = body.lastName?.trim()
     const phoneNumber = body.phoneNumber?.trim()
 
-    if (!fullName || !phoneNumber) {
+    if (!firstName || !lastName || !phoneNumber) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Full name and phone number are required',
+          message: 'First name, last name, and phone number are required',
         },
         { status: 400 }
       )
     }
 
     const result = await createCustomerProfileService({
-      fullName,
+      firstName,
+      lastName,
       phoneNumber,
     })
 

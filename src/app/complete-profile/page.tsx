@@ -4,7 +4,8 @@ import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function CompleteProfilePage() {
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,15 +23,16 @@ export default function CompleteProfilePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          fullName,
+          firstName,
+          lastName,
           phoneNumber,
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to save profile')
+        throw new Error(data?.message || 'Failed to save profile')
       }
 
       router.push('/dashboard')
@@ -47,20 +49,35 @@ export default function CompleteProfilePage() {
       <div className="w-full max-w-md rounded-2xl border p-6 shadow-sm">
         <h1 className="text-2xl font-bold mb-2">Complete Profile</h1>
         <p className="text-sm text-gray-600 mb-6">
-          Please enter your full name and phone number.
+          Please enter your first name, last name and phone number.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-              Full name
+            <label htmlFor="firstName" className="block text-sm font-medium mb-1">
+              First name
             </label>
             <input
-              id="fullName"
+              id="firstName"
               type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Enter your full name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter your first name"
+              className="w-full rounded-lg border px-3 py-2 outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium mb-1">
+              Last name
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter your last name"
               className="w-full rounded-lg border px-3 py-2 outline-none"
               required
             />
@@ -81,9 +98,7 @@ export default function CompleteProfilePage() {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
