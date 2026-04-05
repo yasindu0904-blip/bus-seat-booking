@@ -1,12 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 
 type CreateCustomerProfileInput = {
-  fullName: string
+  firstName: string
+  lastName: string
   phoneNumber: string
 }
 
 export async function createCustomerProfileService({
-  fullName,
+  firstName,
+  lastName,
   phoneNumber,
 }: CreateCustomerProfileInput) {
   try {
@@ -31,7 +33,8 @@ export async function createCustomerProfileService({
         {
           id: user.id,
           email: user.email,
-          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
           phone_number: phoneNumber,
           profile_completed: true,
         },

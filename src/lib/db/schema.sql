@@ -1,7 +1,8 @@
 create table public.customers (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique not null,
-  full_name text,
+  first_name text,
+  last_name text,
   mobile_number text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

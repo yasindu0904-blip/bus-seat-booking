@@ -7,7 +7,7 @@ export async function authCallbackController(request: NextRequest) {
   const code = searchParams.get('code')
   let next = searchParams.get('next') ?? '/complete-profile'
 
-  console.log('callback hit, code =', code)
+  console.log('callback hit')
 
   if (!next.startsWith('/')) {
     next = '/complete-profile'
