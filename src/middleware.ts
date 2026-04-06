@@ -52,8 +52,14 @@ export async function middleware(request: NextRequest) {
 
   const role = roleResult.role
 
+
+
   if (!role) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    if (pathname == '/complete-profile') {
+      return response
+    }
+
+    return NextResponse.redirect(new URL('/complete-profile', request.url))      
   }
 
   if (role === 'admin') {
