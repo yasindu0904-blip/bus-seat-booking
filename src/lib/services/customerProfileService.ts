@@ -27,7 +27,7 @@ export async function createCustomerProfileService({
       }
     }
 
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('customer_profiles')
       .upsert(
         {
@@ -43,20 +43,41 @@ export async function createCustomerProfileService({
       .select()
       .single()
 
-    if (error) {
-      console.error('customer_profiles upsert error:', error)
+    if (profileError) {
+      console.error('customer_profiles upsert error:', profileError)
 
       return {
         success: false,
         statusCode: 500,
-        message: error.message || 'Failed to save profile',
+        message: profileError.message || 'Failed to save profile',
+      }
+    }
+
+    const { error: roleError } = await supabase.from('user_roles').upsert(
+      {
+        user_id: user.id,
+        role: 'customer',
+      },
+      { onConflict: 'user_id' }
+    )
+
+    if (roleError) {
+      console.error('user_roles upsert error:', roleError)
+
+      return {
+        success: false,
+        statusCode: 500,
+        message: roleError.message || 'Failed to save user role',
       }
     }
 
     return {
       success: true,
       statusCode: 200,
-      data,
+      data: {
+        ...profileData,
+        role: 'customer',
+      },
     }
   } catch (error) {
     console.error('createCustomerProfileService error:', error)

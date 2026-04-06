@@ -65,8 +65,8 @@ export default function LoginPage() {
   const buttonDisabled = loading || countdown > 0
 
   return (
-    <main className="min-h-screen bg-[#f4fbf3] text-[#161d18]">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-6 pt-4">
+    <main className="min-h-screen bg-gray-200 text-[#161d18]">
+      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f4fbf3] px-5 pb-10 pt-4">
         <header className="flex items-center justify-between pb-4 pt-2">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dff5e8] text-xl">

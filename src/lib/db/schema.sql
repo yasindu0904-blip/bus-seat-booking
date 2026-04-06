@@ -43,3 +43,16 @@ to authenticated
 using ((select auth.uid()) = id)
 with check ((select auth.uid()) = id);
 
+create table public.user_roles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  role text not null check (role in ('customer', 'admin')),
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id)
+);
+
+create table public.admin_profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  first_name text,
+  last_name text,
+  created_at timestamptz not null default now()
+);
