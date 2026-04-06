@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUserRole } from '@/lib/auth/getUserRole'
 
 export async function getMeService() {
   try {
@@ -17,20 +18,38 @@ export async function getMeService() {
       }
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('customer_profiles')
-      .select('first_name, last_name, phone_number, profile_completed')
-      .eq('id', user.id)
-      .maybeSingle()
+    const roleResult = await getUserRole(supabase, user.id)
 
-    if (profileError) {
-      console.error('customer_profiles fetch error:', profileError)
-
+    if (!roleResult.success) {
       return {
         success: false,
         statusCode: 500,
-        message: profileError.message || 'Failed to fetch profile',
+        message: roleResult.message,
       }
+    }
+
+    const role = roleResult.role
+
+    let profile = null
+
+    if (role === 'customer') {
+      const { data: customerProfile, error: profileError } = await supabase
+        .from('customer_profiles')
+        .select('first_name, last_name, phone_number, profile_completed')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('customer_profiles fetch error:', profileError)
+
+        return {
+          success: false,
+          statusCode: 500,
+          message: profileError.message || 'Failed to fetch profile',
+        }
+      }
+
+      profile = customerProfile
     }
 
     return {
@@ -39,6 +58,7 @@ export async function getMeService() {
       data: {
         uid: user.id,
         email: user.email ?? null,
+        role,
         firstName: profile?.first_name ?? null,
         lastName: profile?.last_name ?? null,
         phoneNumber: profile?.phone_number ?? null,

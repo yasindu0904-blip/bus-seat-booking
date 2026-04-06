@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { getUserRole } from '@/lib/auth/getUserRole'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -30,21 +31,53 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // If not logged in, protect private routes
+  const isCustomerArea =
+    pathname.startsWith('/complete-profile') || pathname.startsWith('/dashboard')
+
+  const isAdminArea = pathname.startsWith('/admin-dashboard')
+
   if (!user) {
-    if (pathname.startsWith('/complete-profile') || pathname.startsWith('/dashboard')) {
+    if (isCustomerArea || isAdminArea) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     return response
   }
 
-  // Logged in user: check profile
+  const roleResult = await getUserRole(supabase, user.id)
+
+  if (!roleResult.success) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  const role = roleResult.role
+
+  if (!role) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  if (role === 'admin') {
+    if (
+      pathname === '/login' ||
+      pathname === '/complete-profile' ||
+      pathname.startsWith('/dashboard')
+    ) {
+      return NextResponse.redirect(new URL('/admin-dashboard', request.url))
+    }
+
+    return response
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from('customer_profiles')
     .select('first_name, last_name, phone_number, profile_completed')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('customer_profiles fetch error:', profileError)
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
   const isProfileComplete =
     !!profile &&
@@ -53,7 +86,6 @@ export async function middleware(request: NextRequest) {
     !!profile.phone_number &&
     profile.profile_completed === true
 
-  // Logged in user visits login page
   if (pathname === '/login') {
     if (isProfileComplete) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -62,7 +94,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/complete-profile', request.url))
   }
 
-  // Logged in user visits complete-profile page
+  if (pathname.startsWith('/admin-dashboard')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   if (pathname === '/complete-profile') {
     if (isProfileComplete) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -71,7 +106,6 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Logged in user visits dashboard without complete profile
   if (pathname.startsWith('/dashboard')) {
     if (!isProfileComplete) {
       return NextResponse.redirect(new URL('/complete-profile', request.url))
@@ -84,5 +118,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/complete-profile', '/dashboard/:path*'],
+  matcher: ['/login', '/complete-profile', '/dashboard/:path*', '/admin-dashboard/:path*'],
 }
