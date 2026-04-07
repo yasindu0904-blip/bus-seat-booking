@@ -56,3 +56,11 @@ create table public.admin_profiles (
   last_name text,
   created_at timestamptz not null default now()
 );
+
+create table public.admin_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  started_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  is_active boolean not null default true
+);
