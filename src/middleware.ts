@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { getUserRole } from '@/lib/auth/getUserRole'
+import { validateAdminSessionService } from '@/lib/services/auth/validateAdminSessionService'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -62,17 +63,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/complete-profile', request.url))      
   }
 
-  if (role === 'admin') {
-    if (
-      pathname === '/login' ||
-      pathname === '/complete-profile' ||
-      pathname.startsWith('/dashboard')
-    ) {
-      return NextResponse.redirect(new URL('/admin/admin-dashboard', request.url))
-    }
+if (role === 'admin') {
+  const adminSessionResult = await validateAdminSessionService(supabase, user.id)
 
-    return response
+  if (!adminSessionResult.success || !adminSessionResult.valid) {
+    return NextResponse.redirect(new URL('/api/auth/logout', request.url))
   }
+
+  if (
+    pathname === '/login' ||
+    pathname === '/complete-profile' ||
+    pathname.startsWith('/dashboard')
+  ) {
+    return NextResponse.redirect(new URL('/admin/admin-dashboard', request.url))
+  }
+
+  return response
+}
 
   const { data: profile, error: profileError } = await supabase
     .from('customer_profiles')
