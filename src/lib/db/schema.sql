@@ -64,3 +64,39 @@ create table public.admin_sessions (
   expires_at timestamptz not null,
   is_active boolean not null default true
 );
+
+alter table public.customer_profiles
+add column if not exists phone_number text,
+add column if not exists profile_completed boolean not null default false;
+
+alter table public.customer_profiles
+drop column if exists mobile_number;
+
+drop trigger if exists set_customers_updated_at on public.customers;
+drop policy if exists "Customers can view their own profile" on public.customers;
+drop policy if exists "Customers can insert their own profile" on public.customers;
+drop policy if exists "Customers can update their own profile" on public.customers;
+
+create trigger set_customer_profiles_updated_at
+before update on public.customer_profiles
+for each row
+execute function public.set_updated_at();
+
+create policy "Customers can view their own profile"
+on public.customer_profiles
+for select
+to authenticated
+using ((select auth.uid()) = id);
+
+create policy "Customers can insert their own profile"
+on public.customer_profiles
+for insert
+to authenticated
+with check ((select auth.uid()) = id);
+
+create policy "Customers can update their own profile"
+on public.customer_profiles
+for update
+to authenticated
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
