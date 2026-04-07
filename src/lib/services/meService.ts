@@ -30,7 +30,10 @@ export async function getMeService() {
 
     const role = roleResult.role
 
-    let profile = null
+    let firstName: string | null = null
+    let lastName: string | null = null
+    let phoneNumber: string | null = null
+    let profileCompleted = false
 
     if (role === 'customer') {
       const { data: customerProfile, error: profileError } = await supabase
@@ -49,7 +52,32 @@ export async function getMeService() {
         }
       }
 
-      profile = customerProfile
+      firstName = customerProfile?.first_name ?? null
+      lastName = customerProfile?.last_name ?? null
+      phoneNumber = customerProfile?.phone_number ?? null
+      profileCompleted = customerProfile?.profile_completed ?? false
+    }
+
+    if (role === 'admin') {
+      const { data: adminProfile, error: adminProfileError } = await supabase
+        .from('admin_profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (adminProfileError) {
+        console.error('admin_profiles fetch error:', adminProfileError)
+
+        return {
+          success: false,
+          statusCode: 500,
+          message: adminProfileError.message || 'Failed to fetch admin profile',
+        }
+      }
+
+      firstName = adminProfile?.first_name ?? null
+      lastName = adminProfile?.last_name ?? null
+      profileCompleted = true
     }
 
     return {
@@ -59,10 +87,10 @@ export async function getMeService() {
         uid: user.id,
         email: user.email ?? null,
         role,
-        firstName: profile?.first_name ?? null,
-        lastName: profile?.last_name ?? null,
-        phoneNumber: profile?.phone_number ?? null,
-        profileCompleted: profile?.profile_completed ?? false,
+        firstName,
+        lastName,
+        phoneNumber,
+        profileCompleted,
       },
     }
   } catch (error) {
