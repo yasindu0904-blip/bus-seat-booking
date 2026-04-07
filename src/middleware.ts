@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
   const isCustomerArea =
     pathname.startsWith('/complete-profile') || pathname.startsWith('/dashboard')
 
-  const isAdminArea = pathname.startsWith('/admin-dashboard')
+  const isAdminArea = pathname.startsWith('/admin')
 
   if (!user) {
     if (isCustomerArea || isAdminArea) {
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
       pathname === '/complete-profile' ||
       pathname.startsWith('/dashboard')
     ) {
-      return NextResponse.redirect(new URL('/admin-dashboard', request.url))
+      return NextResponse.redirect(new URL('/admin/admin-dashboard', request.url))
     }
 
     return response
@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/complete-profile', request.url))
   }
 
-  if (pathname.startsWith('/admin-dashboard')) {
+  if (pathname.startsWith('/admin')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
@@ -124,5 +124,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/complete-profile', '/dashboard/:path*', '/admin-dashboard/:path*'],
+  matcher: ['/login', '/complete-profile', '/dashboard/:path*', '/admin/:path*'],
 }
