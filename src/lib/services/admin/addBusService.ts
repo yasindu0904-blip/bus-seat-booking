@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 type AddBusParams = {
   busNumber: string
   seatCount: number
+  nowLocation: string
 }
 
 type AddBusServiceResult =
@@ -21,13 +22,13 @@ export async function addBusService(
   params: AddBusParams
 ): Promise<AddBusServiceResult> {
   try {
-    const { busNumber, seatCount } = params
+    const { busNumber, seatCount, nowLocation } = params
 
-    if (!busNumber || !seatCount) {
+    if (!busNumber || !seatCount || !nowLocation) {
       return {
         success: false,
         statusCode: 400,
-        message: 'Bus number and seat count are required',
+        message: 'Bus number, seat count and now location are required',
       }
     }
 
@@ -36,6 +37,7 @@ export async function addBusService(
     const { error } = await supabase.from('buses').insert({
       bus_number: busNumber,
       seat_count: seatCount,
+      now_location: nowLocation,
     })
 
     if (error) {

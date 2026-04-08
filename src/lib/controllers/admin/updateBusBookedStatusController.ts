@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { addBusService } from '@/lib/services/admin/addBusService'
+import { updateBusBookedStatusService } from '@/lib/services/admin/updateBusBookedStatusService'
 
-export async function addBusController(request: Request) {
+export async function updateBusBookedStatusController(request: Request) {
   const adminCheck = await requireAdmin()
 
   if (!adminCheck.success) {
@@ -19,12 +19,11 @@ export async function addBusController(request: Request) {
 
   try {
     const body = await request.json()
-    const { busNumber, seatCount, nowLocation } = body
+    const { busId, booked } = body
 
-    const result = await addBusService({
-      busNumber,
-      seatCount: Number(seatCount),
-      nowLocation,
+    const result = await updateBusBookedStatusService({
+      busId,
+      booked: Boolean(booked),
     })
 
     return NextResponse.json(
@@ -37,7 +36,7 @@ export async function addBusController(request: Request) {
       }
     )
   } catch (error) {
-    console.error('addBusController error:', error)
+    console.error('updateBusBookedStatusController error:', error)
 
     return NextResponse.json(
       {
