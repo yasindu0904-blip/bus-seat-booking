@@ -61,7 +61,7 @@ export async function getMeService() {
     if (role === 'admin') {
       const { data: adminProfile, error: adminProfileError } = await supabase
         .from('admin_profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, email')
         .eq('id', user.id)
         .maybeSingle()
 
