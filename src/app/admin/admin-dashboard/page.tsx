@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
           </Link>
 
           <Link
-            href="/admin/admins"
+            href="/admin/add-admin"
             className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <h2 className="text-lg font-semibold">Add Admins</h2>

@@ -16,7 +16,7 @@ export async function createAdminSessionService(userId: string) {
     }
   }
 
-  const expiresAt = new Date(Date.now() + 1 * 60 * 1000).toISOString()
+  const expiresAt = new Date(Date.now() + 10000 * 60 * 1000).toISOString()
 
   const { error: insertError } = await supabase
     .from('admin_sessions')
