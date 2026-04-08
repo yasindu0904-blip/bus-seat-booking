@@ -130,3 +130,31 @@ with check (
       and user_roles.role = 'admin'
   )
 );
+
+alter table public.buses enable row level security;
+
+create policy "Admins can insert buses"
+on public.buses
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.user_roles
+    where user_roles.user_id = auth.uid()
+      and user_roles.role = 'admin'
+  )
+);
+
+create policy "Admins can view buses"
+on public.buses
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.user_roles
+    where user_roles.user_id = auth.uid()
+      and user_roles.role = 'admin'
+  )
+);
