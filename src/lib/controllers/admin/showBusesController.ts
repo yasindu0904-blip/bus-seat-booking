@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { showBusesService } from '@/lib/services/admin/showBusesService'
 
-export async function showBusesController(_request: Request) {
+export async function showBusesController(request: Request) {
   const adminCheck = await requireAdmin()
 
   if (!adminCheck.success) {
@@ -17,16 +17,17 @@ export async function showBusesController(_request: Request) {
     )
   }
 
-  const { searchParams } = new URL(_request.url)
+  const { searchParams } = new URL(request.url)
 
   const busNumber = searchParams.get('busNumber')?.trim() || ''
-  const nowLocation = searchParams.get('nowLocation')?.trim() || ''
+  const startingLocation = searchParams.get('startingLocation')?.trim() || ''
+  const routeName = searchParams.get('routeName')?.trim() || ''
 
-  if (!busNumber && !nowLocation) {
+  if (!busNumber && !startingLocation && !routeName) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Please fill bus number or now location',
+        message: 'Please fill bus number or starting location or route name',
       },
       {
         status: 400,
@@ -36,9 +37,9 @@ export async function showBusesController(_request: Request) {
 
   const result = await showBusesService({
     busNumber,
-    nowLocation,
+    startingLocation,
+    routeName,
   })
-
 
   if (!result.success) {
     return NextResponse.json(

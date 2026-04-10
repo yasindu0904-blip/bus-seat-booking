@@ -182,3 +182,81 @@ with check (
       and user_roles.role = 'admin'
   )
 );
+
+-- 1. remove old buses columns
+alter table public.buses
+drop column if exists booked;
+
+alter table public.buses
+rename column now_location to starting_location;
+
+-- 2. make routes.route_name the primary key
+-- first drop buses foreign references later if any use routes.id in future
+
+alter table public.routes
+drop constraint if exists routes_pkey;
+
+alter table public.routes
+add primary key (route_name);
+
+
+-- 3. add route_name to buses
+alter table public.buses
+add column if not exists route_name text;
+
+-- 4. make route_name required after filling old rows
+-- if you already have data in buses, update them first before not null
+-- example:
+-- update public.buses set route_name = 'some_route' where route_name is null;
+
+alter table public.buses
+alter column route_name set not null;
+
+-- 5. add foreign key from buses.route_name to routes.route_name
+alter table public.buses
+add constraint buses_route_name_fkey
+foreign key (route_name) references public.routes(route_name)
+on update cascade
+on delete restrict;
+
+-- 6. make bus_number the primary key of buses
+-- first remove old primary key on id
+alter table public.buses
+drop constraint if exists buses_pkey;
+
+-- make sure bus_number is not null
+alter table public.buses
+alter column bus_number set not null;
+
+-- set bus_number as primary key
+alter table public.buses
+add primary key (bus_number);
+
+-- optional: if you do not need id anymore, remove it
+-- only do this if no code or table uses buses.id
+alter table public.buses
+drop column if exists id;
+
+
+-- 7. create routes_bus table
+create table public.routes_bus (
+  route_name text not null,
+  trip_date date not null,
+  shift integer not null check (shift in (1, 2, 3, 4)),
+  bus_number text not null,
+
+  constraint routes_bus_route_name_fkey
+    foreign key (route_name)
+    references public.routes(route_name)
+    on update cascade
+    on delete restrict,
+
+  constraint routes_bus_bus_number_fkey
+    foreign key (bus_number)
+    references public.buses(bus_number)
+    on update cascade
+    on delete restrict,
+
+  constraint routes_bus_pkey
+    primary key (route_name, trip_date, shift, bus_number)
+);

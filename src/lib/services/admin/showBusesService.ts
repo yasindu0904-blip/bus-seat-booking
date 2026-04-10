@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 
 type ShowBusesParams = {
   busNumber?: string
-  nowLocation?: string
+  startingLocation?: string
+  routeName?: string
 }
 
 type ShowBusesServiceResult =
@@ -14,8 +15,8 @@ type ShowBusesServiceResult =
         id: string
         bus_number: string
         seat_count: number | null
-        now_location: string | null
-        booked: boolean
+        starting_location: string | null
+        route_name: string
         created_at: string
       }[]
     }
@@ -30,19 +31,23 @@ export async function showBusesService(
 ): Promise<ShowBusesServiceResult> {
   try {
     const supabase = await createClient()
-    const { busNumber, nowLocation } = params
+    const { busNumber, startingLocation, routeName } = params
 
     let query = supabase
       .from('buses')
-      .select('id, bus_number, seat_count, now_location, booked, created_at')
+      .select('id, bus_number, seat_count, starting_location, route_name, created_at')
       .order('created_at', { ascending: false })
 
     if (busNumber) {
       query = query.ilike('bus_number', `%${busNumber}%`)
     }
 
-    if (nowLocation) {
-      query = query.ilike('now_location', `%${nowLocation}%`)
+    if (startingLocation) {
+      query = query.ilike('starting_location', `%${startingLocation}%`)
+    }
+
+    if (routeName) {
+      query = query.ilike('route_name', `%${routeName}%`)
     }
 
     const { data, error } = await query

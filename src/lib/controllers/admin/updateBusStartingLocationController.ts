@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { updateBusLocationService } from '@/lib/services/admin/updateBusLocationService'
+import { updateBusStartingLocationService } from '@/lib/services/admin/updateBusStartingLocationService'
 
-export async function updateBusLocationController(request: Request) {
+export async function updateBusStartingLocationController(request: Request) {
   const adminCheck = await requireAdmin()
 
   if (!adminCheck.success) {
@@ -19,11 +19,11 @@ export async function updateBusLocationController(request: Request) {
 
   try {
     const body = await request.json()
-    const { busId, nowLocation } = body
+    const { busId, startingLocation } = body
 
-    const result = await updateBusLocationService({
+    const result = await updateBusStartingLocationService({
       busId,
-      nowLocation,
+      startingLocation,
     })
 
     return NextResponse.json(
@@ -36,7 +36,7 @@ export async function updateBusLocationController(request: Request) {
       }
     )
   } catch (error) {
-    console.error('updateBusLocationController error:', error)
+    console.error('updateBusStartingLocationController error:', error)
 
     return NextResponse.json(
       {
