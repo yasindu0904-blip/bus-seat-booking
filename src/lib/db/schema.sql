@@ -288,3 +288,6 @@ drop constraint if exists routes_bus_pkey;
 alter table public.routes_bus
 add constraint routes_bus_pkey
 primary key (route_name, trip_date, shift);
+
+alter table public.buses
+rename column starting_location to bus_starting_location;
