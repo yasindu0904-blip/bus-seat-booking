@@ -218,3 +218,45 @@ add constraint buses_route_name_fkey
 foreign key (route_name) references public.routes(route_name)
 on update cascade
 on delete restrict;
+
+-- 6. make bus_number the primary key of buses
+-- first remove old primary key on id
+alter table public.buses
+drop constraint if exists buses_pkey;
+
+-- make sure bus_number is not null
+alter table public.buses
+alter column bus_number set not null;
+
+-- set bus_number as primary key
+alter table public.buses
+add primary key (bus_number);
+
+-- optional: if you do not need id anymore, remove it
+-- only do this if no code or table uses buses.id
+alter table public.buses
+drop column if exists id;
+
+
+-- 7. create routes_bus table
+create table public.routes_bus (
+  route_name text not null,
+  trip_date date not null,
+  shift integer not null check (shift in (1, 2, 3, 4)),
+  bus_number text not null,
+
+  constraint routes_bus_route_name_fkey
+    foreign key (route_name)
+    references public.routes(route_name)
+    on update cascade
+    on delete restrict,
+
+  constraint routes_bus_bus_number_fkey
+    foreign key (bus_number)
+    references public.buses(bus_number)
+    on update cascade
+    on delete restrict,
+
+  constraint routes_bus_pkey
+    primary key (route_name, trip_date, shift, bus_number)
+);
