@@ -182,3 +182,39 @@ with check (
       and user_roles.role = 'admin'
   )
 );
+
+-- 1. remove old buses columns
+alter table public.buses
+drop column if exists booked;
+
+alter table public.buses
+rename column now_location to starting_location;
+
+-- 2. make routes.route_name the primary key
+-- first drop buses foreign references later if any use routes.id in future
+
+alter table public.routes
+drop constraint if exists routes_pkey;
+
+alter table public.routes
+add primary key (route_name);
+
+
+-- 3. add route_name to buses
+alter table public.buses
+add column if not exists route_name text;
+
+-- 4. make route_name required after filling old rows
+-- if you already have data in buses, update them first before not null
+-- example:
+-- update public.buses set route_name = 'some_route' where route_name is null;
+
+alter table public.buses
+alter column route_name set not null;
+
+-- 5. add foreign key from buses.route_name to routes.route_name
+alter table public.buses
+add constraint buses_route_name_fkey
+foreign key (route_name) references public.routes(route_name)
+on update cascade
+on delete restrict;

@@ -19,12 +19,13 @@ export async function addBusController(request: Request) {
 
   try {
     const body = await request.json()
-    const { busNumber, seatCount, nowLocation } = body
+    const { busNumber, seatCount, startingLocation, routeName } = body
 
     const result = await addBusService({
       busNumber,
       seatCount: Number(seatCount),
-      nowLocation,
+      startingLocation,
+      routeName,
     })
 
     return NextResponse.json(

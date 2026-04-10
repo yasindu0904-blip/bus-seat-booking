@@ -1,15 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+type RouteItem = {
+  route_name: string
+  start_location: string
+  end_location: string
+}
 
 export default function AddBusForm() {
   const [busNumber, setBusNumber] = useState('')
   const [seatCount, setSeatCount] = useState('')
-  const [nowLocation, setNowLocation] = useState('')
+  const [startingLocation, setStartingLocation] = useState('')
+  const [routeName, setRouteName] = useState('')
+
+  const [routes, setRoutes] = useState<RouteItem[]>([])
+  const [routesLoading, setRoutesLoading] = useState(true)
 
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        const response = await fetch('/api/admin/show-routes')
+        const result = await response.json()
+
+        if (!response.ok) {
+          setErrorMessage(result.message || 'Failed to load routes')
+          return
+        }
+
+        setRoutes(result.data || [])
+      } catch {
+        setErrorMessage('Something went wrong while loading routes')
+      } finally {
+        setRoutesLoading(false)
+      }
+    }
+
+    fetchRoutes()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -27,7 +59,8 @@ export default function AddBusForm() {
         body: JSON.stringify({
           busNumber,
           seatCount,
-          nowLocation,
+          startingLocation,
+          routeName,
         }),
       })
 
@@ -41,7 +74,8 @@ export default function AddBusForm() {
       setSuccessMessage(result.message || 'Bus added successfully')
       setBusNumber('')
       setSeatCount('')
-      setNowLocation('')
+      setStartingLocation('')
+      setRouteName('')
     } catch {
       setErrorMessage('Something went wrong')
     } finally {
@@ -75,14 +109,31 @@ export default function AddBusForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Now Location</label>
+          <label className="mb-1 block text-sm font-medium">Starting Location</label>
           <input
             type="text"
-            value={nowLocation}
-            onChange={(e) => setNowLocation(e.target.value)}
+            value={startingLocation}
+            onChange={(e) => setStartingLocation(e.target.value)}
             placeholder="Colombo"
             className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Route Name</label>
+          <select
+            value={routeName}
+            onChange={(e) => setRouteName(e.target.value)}
+            disabled={routesLoading}
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
+          >
+            <option value="">Select a route</option>
+            {routes.map((route) => (
+              <option key={route.route_name} value={route.route_name}>
+                {route.route_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {errorMessage ? (
