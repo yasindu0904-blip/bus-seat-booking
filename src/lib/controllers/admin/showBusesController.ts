@@ -17,7 +17,28 @@ export async function showBusesController(_request: Request) {
     )
   }
 
-  const result = await showBusesService()
+  const { searchParams } = new URL(_request.url)
+
+  const busNumber = searchParams.get('busNumber')?.trim() || ''
+  const nowLocation = searchParams.get('nowLocation')?.trim() || ''
+
+  if (!busNumber && !nowLocation) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Please fill bus number or now location',
+      },
+      {
+        status: 400,
+      }
+    )
+  }
+
+  const result = await showBusesService({
+    busNumber,
+    nowLocation,
+  })
+
 
   if (!result.success) {
     return NextResponse.json(
