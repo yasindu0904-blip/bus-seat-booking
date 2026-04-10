@@ -9,7 +9,6 @@ type ShowRoutesServiceResult =
         id: string
         route_name: string
         start_location: string
-        end_location: string
         created_at: string
       }[]
     }
@@ -25,7 +24,7 @@ export async function showRoutesService(): Promise<ShowRoutesServiceResult> {
 
     const { data, error } = await supabase
       .from('routes')
-      .select('id, route_name, start_location, end_location, created_at')
+      .select('id, route_name, start_location, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {

@@ -291,3 +291,63 @@ primary key (route_name, trip_date, shift);
 
 alter table public.buses
 rename column starting_location to bus_starting_location;
+
+-- 1. drop foreign keys that depend on routes.route_name primary key
+alter table public.buses
+drop constraint if exists buses_route_name_fkey;
+
+alter table public.routes_bus
+drop constraint if exists routes_bus_route_name_fkey;
+
+-- 2. drop current primary key on routes.route_name
+alter table public.routes
+drop constraint if exists routes_pkey;
+
+-- 3. make sure id exists and has values
+alter table public.routes
+add column if not exists id uuid default gen_random_uuid();
+
+update public.routes
+set id = gen_random_uuid()
+where id is null;
+
+alter table public.routes
+alter column id set not null;
+
+-- 4. make id the new primary key
+alter table public.routes
+add constraint routes_pkey primary key (id);
+
+-- 5. keep route_name and start_location unique
+alter table public.routes
+alter column route_name set not null;
+
+alter table public.routes
+alter column start_location set not null;
+
+alter table public.routes
+drop constraint if exists routes_route_name_key;
+
+alter table public.routes
+add constraint routes_route_name_key unique (route_name);
+
+alter table public.routes
+drop constraint if exists routes_start_location_key;
+
+alter table public.routes
+add constraint routes_start_location_key unique (start_location);
+
+-- 6. recreate foreign keys to route_name
+alter table public.buses
+add constraint buses_route_name_fkey
+foreign key (route_name)
+references public.routes(route_name)
+on update cascade
+on delete restrict;
+
+alter table public.routes_bus
+add constraint routes_bus_route_name_fkey
+foreign key (route_name)
+references public.routes(route_name)
+on update cascade
+on delete restrict;
