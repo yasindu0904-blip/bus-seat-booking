@@ -38,7 +38,7 @@ export async function addBusService(
     const { error } = await supabase.from('buses').insert({
       bus_number: busNumber,
       seat_count: seatCount,
-      starting_location: startingLocation,
+      bus_starting_location: startingLocation,
       route_name: routeName,
     })
 

@@ -260,3 +260,34 @@ create table public.routes_bus (
   constraint routes_bus_pkey
     primary key (route_name, trip_date, shift, bus_number)
 );
+
+-- 1. add id column back
+alter table public.buses
+add column if not exists id uuid default gen_random_uuid();
+
+-- 2. fill old rows if any id is null
+update public.buses
+set id = gen_random_uuid()
+where id is null;
+
+-- 3. make id not null
+alter table public.buses
+alter column id set not null;
+
+-- 4. remove current primary key on bus_number
+alter table public.buses
+drop constraint if exists buses_pkey;
+
+-- 5. make id the primary key
+alter table public.buses
+add constraint buses_pkey primary key (id);
+
+alter table public.routes_bus
+drop constraint if exists routes_bus_pkey;
+
+alter table public.routes_bus
+add constraint routes_bus_pkey
+primary key (route_name, trip_date, shift);
+
+alter table public.buses
+rename column starting_location to bus_starting_location;
