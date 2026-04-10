@@ -15,7 +15,7 @@ type ShowBusesServiceResult =
         id: string
         bus_number: string
         seat_count: number | null
-        starting_location: string | null
+        bus_starting_location: string | null
         route_name: string
         created_at: string
       }[]
@@ -35,7 +35,7 @@ export async function showBusesService(
 
     let query = supabase
       .from('buses')
-      .select('id, bus_number, seat_count, starting_location, route_name, created_at')
+      .select('id, bus_number, seat_count, bus_starting_location, route_name, created_at')
       .order('created_at', { ascending: false })
 
     if (busNumber) {
@@ -43,7 +43,7 @@ export async function showBusesService(
     }
 
     if (startingLocation) {
-      query = query.ilike('starting_location', `%${startingLocation}%`)
+      query = query.ilike('bus_starting_location', `%${startingLocation}%`)
     }
 
     if (routeName) {

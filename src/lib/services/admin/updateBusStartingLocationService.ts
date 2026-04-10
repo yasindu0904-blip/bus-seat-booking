@@ -35,7 +35,7 @@ export async function updateBusStartingLocationService(
 
     const { error } = await supabase
       .from('buses')
-      .update({ starting_location: startingLocation })
+      .update({ bus_starting_location: startingLocation })
       .eq('id', busId)
 
     if (error) {

@@ -6,7 +6,7 @@ type BusItem = {
   id: string
   bus_number: string
   seat_count: number | null
-  starting_location: string | null
+  bus_starting_location: string | null
   route_name: string
   created_at: string
 }
@@ -116,7 +116,7 @@ export default function ShowBusesSection() {
 
   const startEditLocation = (bus: BusItem) => {
     setEditingLocationBusId(bus.id)
-    setEditingLocationValue(bus.starting_location || '')
+    setEditingLocationValue(bus.bus_starting_location || '')
   }
 
   const handleStartingLocationUpdate = async (busId: string) => {
@@ -163,7 +163,7 @@ export default function ShowBusesSection() {
 
     return buses.filter((bus) => {
       const busNumberValue = bus.bus_number?.toLowerCase() || ''
-      const locationValue = bus.starting_location?.toLowerCase() || ''
+      const locationValue = bus.bus_starting_location?.toLowerCase() || ''
       const routeNameValue = bus.route_name?.toLowerCase() || ''
 
       return (
@@ -317,7 +317,7 @@ export default function ShowBusesSection() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <span>{bus.starting_location || '-'}</span>
+                            <span>{bus.bus_starting_location || '-'}</span>
                             <button
                               type="button"
                               onClick={() => startEditLocation(bus)}
