@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 type AddRouteParams = {
   routeName: string
   startLocation: string
-  endLocation: string
 }
 
 type AddRouteResult =
@@ -15,7 +14,6 @@ type AddRouteResult =
         id: string
         routeName: string
         startLocation: string
-        endLocation: string
       }
     }
   | {
@@ -32,13 +30,12 @@ export async function addRouteService(
 
     const routeName = params.routeName?.trim()
     const startLocation = params.startLocation?.trim()
-    const endLocation = params.endLocation?.trim()
 
-    if (!routeName || !startLocation || !endLocation) {
+    if (!routeName || !startLocation) {
       return {
         success: false,
         statusCode: 400,
-        message: 'Route name, start location and end location are required',
+        message: 'Route name and start location are required',
       }
     }
 
@@ -47,7 +44,6 @@ export async function addRouteService(
         .select('id')
         .eq('route_name', routeName)
         .eq('start_location', startLocation)
-        .eq('end_location', endLocation)
         .maybeSingle()
 
     if (existingRoute) {
@@ -63,9 +59,8 @@ export async function addRouteService(
       .insert({
         route_name: routeName,
         start_location: startLocation,
-        end_location: endLocation,
       })
-      .select('id, route_name, start_location, end_location')
+      .select('id, route_name, start_location')
       .single()
 
     if (error) {
@@ -84,7 +79,6 @@ export async function addRouteService(
         id: data.id,
         routeName: data.route_name,
         startLocation: data.start_location,
-        endLocation: data.end_location,
       },
     }
   } catch (error) {

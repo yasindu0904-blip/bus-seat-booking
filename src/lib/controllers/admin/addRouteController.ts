@@ -21,7 +21,6 @@ export async function addRouteController(request: Request) {
     const result = await addRouteService({
       routeName: body.routeName,
       startLocation: body.startLocation,
-      endLocation: body.endLocation,
     })
 
     return NextResponse.json(

@@ -7,7 +7,6 @@ type RouteItem = {
   id: string
   route_name: string
   start_location: string
-  end_location: string
   created_at: string
 }
 
@@ -16,7 +15,6 @@ export default function AdminRoutesPage() {
 
   const [routeName, setRouteName] = useState('')
   const [startLocation, setStartLocation] = useState('')
-  const [endLocation, setEndLocation] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -77,7 +75,6 @@ export default function AdminRoutesPage() {
         body: JSON.stringify({
           routeName,
           startLocation,
-          endLocation,
         }),
       })
 
@@ -91,7 +88,6 @@ export default function AdminRoutesPage() {
       setSuccessMessage(result.message || 'Route added successfully')
       setRouteName('')
       setStartLocation('')
-      setEndLocation('')
 
       if (showRoutes) {
         await fetchRoutes()
@@ -146,16 +142,6 @@ export default function AdminRoutesPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium">End Location</label>
-                <input
-                  type="text"
-                  value={endLocation}
-                  onChange={(e) => setEndLocation(e.target.value)}
-                  placeholder="Kandy"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
-                />
-              </div>
 
               {errorMessage ? (
                 <p className="text-sm text-red-600">{errorMessage}</p>
@@ -208,9 +194,6 @@ export default function AdminRoutesPage() {
                         Start Location
                       </th>
                       <th className="border border-gray-300 px-4 py-2 text-left">
-                        End Location
-                      </th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">
                         Created At
                       </th>
                     </tr>
@@ -223,9 +206,6 @@ export default function AdminRoutesPage() {
                         </td>
                         <td className="border border-gray-300 px-4 py-2">
                           {route.start_location}
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2">
-                          {route.end_location}
                         </td>
                         <td className="border border-gray-300 px-4 py-2">
                           {new Date(route.created_at).toLocaleString()}
