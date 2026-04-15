@@ -1,20 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 type BusItem = {
   id: string
   bus_number: string
   seat_count: number | null
-  bus_starting_location: string | null
+  start_location: string
   route_name: string
   created_at: string
-}
-
-type RouteItem = {
-  route_name: string
-  start_location: string
-  end_location: string
 }
 
 export default function ShowBusesSection() {
@@ -23,40 +17,10 @@ export default function ShowBusesSection() {
   const [showRouteName, setShowRouteName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const [routes, setRoutes] = useState<RouteItem[]>([])
-  const [routesLoading, setRoutesLoading] = useState(true)
-
   const [showBuses, setShowBuses] = useState(false)
   const [busesLoading, setBusesLoading] = useState(false)
   const [busesError, setBusesError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const [buses, setBuses] = useState<BusItem[]>([])
-
-  const [updatingBusId, setUpdatingBusId] = useState<string | null>(null)
-  const [editingLocationBusId, setEditingLocationBusId] = useState<string | null>(null)
-  const [editingLocationValue, setEditingLocationValue] = useState('')
-
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        const response = await fetch('/api/admin/show-routes')
-        const result = await response.json()
-
-        if (!response.ok) {
-          setBusesError(result.message || 'Failed to load routes')
-          return
-        }
-
-        setRoutes(result.data || [])
-      } catch {
-        setBusesError('Something went wrong while loading routes')
-      } finally {
-        setRoutesLoading(false)
-      }
-    }
-
-    fetchRoutes()
-  }, [])
 
   const fetchBuses = async () => {
     setBusesLoading(true)
@@ -81,19 +45,22 @@ export default function ShowBusesSection() {
         `/api/admin/show-buses?${queryParams.toString()}`,
         {
           method: 'GET',
+          credentials: 'include',
         }
       )
 
       const result = await response.json()
 
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         setBusesError(result.message || 'Failed to fetch buses')
+        setBuses([])
         return
       }
 
       setBuses(result.data || [])
     } catch {
       setBusesError('Something went wrong while fetching buses')
+      setBuses([])
     } finally {
       setBusesLoading(false)
     }
@@ -105,53 +72,13 @@ export default function ShowBusesSection() {
       !showStartingLocation.trim() &&
       !showRouteName.trim()
     ) {
-      setBusesError('Please fill bus number or starting location or route name to show buses')
+      setBusesError('Please fill bus number, starting location, or route name')
       return
     }
 
     setBusesError('')
     setShowBuses(true)
     await fetchBuses()
-  }
-
-  const startEditLocation = (bus: BusItem) => {
-    setEditingLocationBusId(bus.id)
-    setEditingLocationValue(bus.bus_starting_location || '')
-  }
-
-  const handleStartingLocationUpdate = async (busId: string) => {
-    setUpdatingBusId(busId)
-    setBusesError('')
-    setSuccessMessage('')
-
-    try {
-      const response = await fetch('/api/admin/update-bus-starting-location', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          busId,
-          startingLocation: editingLocationValue,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        setBusesError(result.message || 'Failed to update starting location')
-        return
-      }
-
-      setSuccessMessage(result.message || 'Starting location updated successfully')
-      setEditingLocationBusId(null)
-      setEditingLocationValue('')
-      await fetchBuses()
-    } catch {
-      setBusesError('Something went wrong while updating starting location')
-    } finally {
-      setUpdatingBusId(null)
-    }
   }
 
   const filteredBuses = useMemo(() => {
@@ -162,14 +89,10 @@ export default function ShowBusesSection() {
     }
 
     return buses.filter((bus) => {
-      const busNumberValue = bus.bus_number?.toLowerCase() || ''
-      const locationValue = bus.bus_starting_location?.toLowerCase() || ''
-      const routeNameValue = bus.route_name?.toLowerCase() || ''
-
       return (
-        busNumberValue.includes(value) ||
-        locationValue.includes(value) ||
-        routeNameValue.includes(value)
+        bus.bus_number.toLowerCase().includes(value) ||
+        bus.start_location.toLowerCase().includes(value) ||
+        bus.route_name.toLowerCase().includes(value)
       )
     })
   }, [buses, searchTerm])
@@ -180,7 +103,9 @@ export default function ShowBusesSection() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium">Search Bus Number</label>
+          <label className="mb-1 block text-sm font-medium">
+            Search Bus Number
+          </label>
           <input
             type="text"
             value={showBusNumber}
@@ -191,7 +116,9 @@ export default function ShowBusesSection() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Search Starting Location</label>
+          <label className="mb-1 block text-sm font-medium">
+            Search Starting Location
+          </label>
           <input
             type="text"
             value={showStartingLocation}
@@ -202,20 +129,16 @@ export default function ShowBusesSection() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Search Route Name</label>
-          <select
+          <label className="mb-1 block text-sm font-medium">
+            Search Route Name
+          </label>
+          <input
+            type="text"
             value={showRouteName}
             onChange={(e) => setShowRouteName(e.target.value)}
-            disabled={routesLoading}
+            placeholder="120"
             className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none"
-          >
-            <option value="">Select a route</option>
-            {routes.map((route) => (
-              <option key={route.route_name} value={route.route_name}>
-                {route.route_name}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 
@@ -231,10 +154,6 @@ export default function ShowBusesSection() {
 
       {busesError ? (
         <p className="mt-4 text-sm text-red-600">{busesError}</p>
-      ) : null}
-
-      {successMessage ? (
-        <p className="mt-4 text-sm text-green-600">{successMessage}</p>
       ) : null}
 
       {showBuses ? (
@@ -271,13 +190,11 @@ export default function ShowBusesSection() {
                       Route Name
                     </th>
                     <th className="border border-gray-300 px-4 py-2 text-left">
-                      Actions
-                    </th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">
                       Created At
                     </th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filteredBuses.map((bus) => (
                     <tr key={bus.id}>
@@ -288,51 +205,10 @@ export default function ShowBusesSection() {
                         {bus.seat_count ?? '-'}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {editingLocationBusId === bus.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editingLocationValue}
-                              onChange={(e) => setEditingLocationValue(e.target.value)}
-                              className="rounded-lg border border-gray-300 px-2 py-1 outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleStartingLocationUpdate(bus.id)}
-                              disabled={updatingBusId === bus.id}
-                              className="rounded-lg border border-[#161d18] px-3 py-1"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingLocationBusId(null)
-                                setEditingLocationValue('')
-                              }}
-                              className="rounded-lg border border-gray-300 px-3 py-1"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span>{bus.bus_starting_location || '-'}</span>
-                            <button
-                              type="button"
-                              onClick={() => startEditLocation(bus)}
-                              className="rounded-lg border border-[#161d18] px-3 py-1"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        )}
+                        {bus.start_location}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {bus.route_name}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2">
-                        <span className="text-sm text-gray-500">Edit location only</span>
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {new Date(bus.created_at).toLocaleString()}

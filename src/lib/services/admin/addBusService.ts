@@ -29,26 +29,51 @@ export async function addBusService(
       return {
         success: false,
         statusCode: 400,
-        message: 'Bus number, seat count, starting location and route name are required',
+        message:
+          'Bus number, seat count, starting location and route name are required',
       }
     }
 
     const supabase = await createClient()
 
-    const { error } = await supabase.from('buses').insert({
-      bus_number: busNumber,
-      seat_count: seatCount,
-      bus_starting_location: startingLocation,
-      route_name: routeName,
-    })
+    const { data: route, error: routeError } = await supabase
+      .from('routes')
+      .select('id')
+      .eq('route_name', routeName)
+      .eq('start_location', startingLocation)
+      .maybeSingle()
 
-    if (error) {
-      console.error('addBusService error:', error)
+    if (routeError) {
+      console.error('find route error:', routeError)
 
       return {
         success: false,
         statusCode: 500,
-        message: error.message || 'Failed to add bus',
+        message: routeError.message || 'Failed to find route',
+      }
+    }
+
+    if (!route) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: 'No route found for this route name and starting location',
+      }
+    }
+
+    const { error: insertError } = await supabase.from('buses').insert({
+      bus_number: busNumber,
+      seat_count: seatCount,
+      routes_id: route.id,
+    })
+
+    if (insertError) {
+      console.error('addBusService error:', insertError)
+
+      return {
+        success: false,
+        statusCode: 500,
+        message: insertError.message || 'Failed to add bus',
       }
     }
 
