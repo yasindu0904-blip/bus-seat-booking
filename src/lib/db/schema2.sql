@@ -75,9 +75,8 @@ create table public.routes_bus (
   shift integer not null,
   trip_date date not null,
   bus_number text not null,
-  constraint routes_bus_pkey primary key (routes_id, shift),
+  constraint routes_bus_pkey primary key (trip_date, shift),
   constraint routes_bus_bus_number_fkey foreign KEY (bus_number) references buses (bus_number) on update CASCADE on delete RESTRICT,
   constraint routes_bus_routes_id_fkey foreign KEY (routes_id) references routes (id) on update CASCADE on delete RESTRICT,
   constraint routes_bus_shift_check check ((shift = any (array[1, 2, 3, 4])))
 ) TABLESPACE pg_default;
-

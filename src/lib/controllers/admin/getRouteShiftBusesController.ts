@@ -18,14 +18,15 @@ export async function getRouteShiftBusesController(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const routeName = searchParams.get('route_name')
+
+  const routesId = searchParams.get('routes_id')
   const tripDate = searchParams.get('trip_date')
 
-  if (!routeName || !tripDate) {
+  if (!routesId || !tripDate) {
     return NextResponse.json(
       {
         success: false,
-        message: 'route_name and trip_date are required',
+        message: 'routes_id and trip_date are required',
       },
       {
         status: 400,
@@ -34,7 +35,7 @@ export async function getRouteShiftBusesController(request: Request) {
   }
 
   const result = await getRouteShiftBusesService({
-    routeName,
+    routesId,
     tripDate,
   })
 
