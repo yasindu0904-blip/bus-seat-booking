@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 type GetRouteShiftBusesParams = {
-  routeName: string
+  routesId: string
   tripDate: string
 }
 
@@ -28,12 +28,12 @@ export async function getRouteShiftBusesService(
 ): Promise<GetRouteShiftBusesServiceResult> {
   try {
     const supabase = await createClient()
-    const { routeName, tripDate } = params
+    const { routesId, tripDate } = params
 
     const { data, error } = await supabase
       .from('routes_bus')
       .select('shift, bus_number')
-      .eq('route_name', routeName)
+      .eq('routes_id', routesId)
       .eq('trip_date', tripDate)
       .order('shift', { ascending: true })
 

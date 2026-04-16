@@ -7,7 +7,6 @@ type RouteItem = {
   id: string
   route_name: string
   start_location: string
-  end_location: string
   created_at: string
 }
 
@@ -22,11 +21,13 @@ export default function AddBusesByTimePeriodForm() {
   const [routesLoading, setRoutesLoading] = useState(true)
   const [routesError, setRoutesError] = useState('')
 
-  const [selectedRoute, setSelectedRoute] = useState('')
+  const [selectedRouteId, setSelectedRouteId] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
 
   const [submittedData, setSubmittedData] = useState<{
+    routes_id: string
     route_name: string
+    start_location: string
     trip_date: string
   } | null>(null)
 
@@ -66,12 +67,21 @@ export default function AddBusesByTimePeriodForm() {
   function handleFill(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!selectedRoute || !selectedDate) {
+    if (!selectedRouteId || !selectedDate) {
+      return
+    }
+
+    const selectedRoute = routes.find((route) => route.id === selectedRouteId)
+
+    if (!selectedRoute) {
+      setRoutesError('Selected route was not found')
       return
     }
 
     setSubmittedData({
-      route_name: selectedRoute,
+      routes_id: selectedRoute.id,
+      route_name: selectedRoute.route_name,
+      start_location: selectedRoute.start_location,
       trip_date: selectedDate,
     })
   }
@@ -86,16 +96,16 @@ export default function AddBusesByTimePeriodForm() {
         <form onSubmit={handleFill} className="space-y-4">
           <div>
             <label
-              htmlFor="route_name"
+              htmlFor="routes_id"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
               Route
             </label>
 
             <select
-              id="route_name"
-              value={selectedRoute}
-              onChange={(e) => setSelectedRoute(e.target.value)}
+              id="routes_id"
+              value={selectedRouteId}
+              onChange={(e) => setSelectedRouteId(e.target.value)}
               disabled={routesLoading}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
               required
@@ -105,8 +115,8 @@ export default function AddBusesByTimePeriodForm() {
               </option>
 
               {routes.map((route) => (
-                <option key={route.route_name} value={route.route_name}>
-                  {route.route_name} ({route.start_location} → {route.end_location})
+                <option key={route.id} value={route.id}>
+                  {route.route_name} - {route.start_location}
                 </option>
               ))}
             </select>
@@ -145,7 +155,9 @@ export default function AddBusesByTimePeriodForm() {
 
       {submittedData ? (
         <SelectBusForShifts
+          routesId={submittedData.routes_id}
           routeName={submittedData.route_name}
+          startLocation={submittedData.start_location}
           tripDate={submittedData.trip_date}
         />
       ) : null}
