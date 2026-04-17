@@ -25,10 +25,10 @@ export default function AddBusesByTimePeriodForm() {
   const [selectedDate, setSelectedDate] = useState('')
 
   const [submittedData, setSubmittedData] = useState<{
-    routes_id: string
-    route_name: string
-    start_location: string
-    trip_date: string
+    routesId: string
+    routeName: string
+    startLocation: string
+    tripDate: string
   } | null>(null)
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function AddBusesByTimePeriodForm() {
 
         setRoutes(result.data || [])
       } catch (error) {
-        console.error('Failed to fetch routes:', error)
+        console.error('fetchRoutes error:', error)
         setRoutesError('Something went wrong while loading routes')
         setRoutes([])
       } finally {
@@ -68,6 +68,7 @@ export default function AddBusesByTimePeriodForm() {
     event.preventDefault()
 
     if (!selectedRouteId || !selectedDate) {
+      setRoutesError('Please select route and date')
       return
     }
 
@@ -78,11 +79,13 @@ export default function AddBusesByTimePeriodForm() {
       return
     }
 
+    setRoutesError('')
+
     setSubmittedData({
-      routes_id: selectedRoute.id,
-      route_name: selectedRoute.route_name,
-      start_location: selectedRoute.start_location,
-      trip_date: selectedDate,
+      routesId: selectedRoute.id,
+      routeName: selectedRoute.route_name,
+      startLocation: selectedRoute.start_location,
+      tripDate: selectedDate,
     })
   }
 
@@ -90,7 +93,7 @@ export default function AddBusesByTimePeriodForm() {
     <div className="space-y-6">
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Step 1 - Route and Date
+          Step 1 - Select Route and Date
         </h2>
 
         <form onSubmit={handleFill} className="space-y-4">
@@ -155,10 +158,10 @@ export default function AddBusesByTimePeriodForm() {
 
       {submittedData ? (
         <SelectBusForShifts
-          routesId={submittedData.routes_id}
-          routeName={submittedData.route_name}
-          startLocation={submittedData.start_location}
-          tripDate={submittedData.trip_date}
+          routesId={submittedData.routesId}
+          routeName={submittedData.routeName}
+          startLocation={submittedData.startLocation}
+          tripDate={submittedData.tripDate}
         />
       ) : null}
     </div>
