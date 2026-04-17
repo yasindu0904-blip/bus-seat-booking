@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { showBusesForRouteService } from '@/lib/services/admin/showBusesForRouteService'
+import { getRouteShiftBusNumbersService } from '@/lib/services/admin/getRouteShiftBusNumbersService'
 
-export async function showBusesForRouteController(request: Request) {
+export async function getRouteShiftBusNumbersController(request: Request) {
   const adminCheck = await requireAdmin()
 
   if (!adminCheck.success) {
@@ -18,13 +18,15 @@ export async function showBusesForRouteController(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const routeName = searchParams.get('route_name')
 
-  if (!routeName) {
+  const routesId = searchParams.get('routes_id')?.trim() || ''
+  const tripDate = searchParams.get('trip_date')?.trim() || ''
+
+  if (!routesId || !tripDate) {
     return NextResponse.json(
       {
         success: false,
-        message: 'route_name is required',
+        message: 'routes_id and trip_date are required',
       },
       {
         status: 400,
@@ -32,25 +34,16 @@ export async function showBusesForRouteController(request: Request) {
     )
   }
 
-  const result = await showBusesForRouteService({ routeName })
-
-  if (!result.success) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: result.message,
-      },
-      {
-        status: result.statusCode,
-      }
-    )
-  }
+  const result = await getRouteShiftBusNumbersService({
+    routesId,
+    tripDate,
+  })
 
   return NextResponse.json(
     {
-      success: true,
+      success: result.success,
       message: result.message,
-      data: result.data,
+      data: result.success ? result.data : undefined,
     },
     {
       status: result.statusCode,
