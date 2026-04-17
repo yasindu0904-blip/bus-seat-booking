@@ -12,6 +12,18 @@ type SelectBusForShiftsProps = {
 type ShiftBusItem = {
   shift: 1 | 2 | 3 | 4
   bus_number: string | null
+  done: boolean
+}
+
+type ShiftSelection = {
+  shift: 1 | 2 | 3 | 4
+  bus_number: string
+  done: boolean
+}
+
+type BusItem = {
+  bus_number: string
+  seat_count: number | null
 }
 
 type GetRouteShiftBusesResponse = {
@@ -20,29 +32,40 @@ type GetRouteShiftBusesResponse = {
   data?: ShiftBusItem[]
 }
 
+type GetBusesByRouteResponse = {
+  success: boolean
+  message: string
+  data?: BusItem[]
+}
+
 export default function SelectBusForShifts({
   routesId,
   routeName,
   startLocation,
   tripDate,
 }: SelectBusForShiftsProps) {
-  const [shifts, setShifts] = useState<ShiftBusItem[]>([
-    { shift: 1, bus_number: null },
-    { shift: 2, bus_number: null },
-    { shift: 3, bus_number: null },
-    { shift: 4, bus_number: null },
+  const [availableBuses, setAvailableBuses] = useState<BusItem[]>([])
+
+  const [shiftSelections, setShiftSelections] = useState<ShiftSelection[]>([
+    { shift: 1, bus_number: '', done: false },
+    { shift: 2, bus_number: '', done: false },
+    { shift: 3, bus_number: '', done: false },
+    { shift: 4, bus_number: '', done: false },
   ])
 
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
-  useEffect(() => {
-    async function fetchShiftBusNumbers() {
-      try {
-        setLoading(true)
-        setErrorMessage('')
+  async function fetchData() {
+    try {
+      setLoading(true)
+      setErrorMessage('')
+      setSuccessMessage('')
 
-        const response = await fetch(
+      const [shiftResponse, busesResponse] = await Promise.all([
+        fetch(
           `/api/admin/get-route-shift-buses?routes_id=${encodeURIComponent(
             routesId
           )}&trip_date=${encodeURIComponent(tripDate)}`,
@@ -51,51 +74,154 @@ export default function SelectBusForShifts({
             credentials: 'include',
             cache: 'no-store',
           }
+        ),
+
+        fetch(
+          `/api/admin/get-buses-by-route?routes_id=${encodeURIComponent(
+            routesId
+          )}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store',
+          }
+        ),
+      ])
+
+      const shiftText = await shiftResponse.text()
+      const busesText = await busesResponse.text()
+
+      let shiftResult: GetRouteShiftBusesResponse
+      let busesResult: GetBusesByRouteResponse
+
+      try {
+        shiftResult = JSON.parse(shiftText)
+      } catch {
+        console.error('Shift API returned non-JSON:', shiftText)
+        setErrorMessage(
+          'Shift API did not return JSON. Check /api/admin/get-route-shift-buses.'
         )
-
-        const text = await response.text()
-
-        let result: GetRouteShiftBusesResponse
-
-        try {
-          result = JSON.parse(text)
-        } catch {
-          console.error('API returned non-JSON:', text)
-
-          setErrorMessage(
-            'API did not return JSON. Check /api/admin/get-route-shift-buses route.'
-          )
-          return
-        }
-
-        if (!response.ok || !result.success) {
-          setErrorMessage(result.message || 'Failed to load shift bus numbers')
-          return
-        }
-
-        setShifts(
-          result.data || [
-            { shift: 1, bus_number: null },
-            { shift: 2, bus_number: null },
-            { shift: 3, bus_number: null },
-            { shift: 4, bus_number: null },
-          ]
-        )
-      } catch (error) {
-        console.error('fetchShiftBusNumbers error:', error)
-        setErrorMessage('Something went wrong while loading shift bus numbers')
-      } finally {
-        setLoading(false)
+        return
       }
-    }
 
-    fetchShiftBusNumbers()
+      try {
+        busesResult = JSON.parse(busesText)
+      } catch {
+        console.error('Buses API returned non-JSON:', busesText)
+        setErrorMessage(
+          'Buses API did not return JSON. Check /api/admin/get-buses-by-route.'
+        )
+        return
+      }
+
+      if (!shiftResponse.ok || !shiftResult.success) {
+        setErrorMessage(
+          shiftResult.message || 'Failed to load saved shift bus numbers'
+        )
+        return
+      }
+
+      if (!busesResponse.ok || !busesResult.success) {
+        setErrorMessage(
+          busesResult.message || 'Failed to load buses for this route'
+        )
+        return
+      }
+
+      setAvailableBuses(busesResult.data || [])
+
+      const loadedShifts: ShiftSelection[] = [1, 2, 3, 4].map((shift) => {
+        const existingShift = shiftResult.data?.find(
+          (item) => Number(item.shift) === shift
+        )
+
+        return {
+          shift: shift as 1 | 2 | 3 | 4,
+          bus_number: existingShift?.bus_number || '',
+          done: existingShift?.done ?? false,
+        }
+      })
+
+      setShiftSelections(loadedShifts)
+    } catch (error) {
+      console.error('fetchData error:', error)
+      setErrorMessage('Something went wrong while loading shift data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [routesId, tripDate])
+
+  function handleBusChange(shift: 1 | 2 | 3 | 4, busNumber: string) {
+    setShiftSelections((prev) =>
+      prev.map((item) =>
+        item.shift === shift ? { ...item, bus_number: busNumber } : item
+      )
+    )
+  }
+
+  async function handleSave() {
+    try {
+      setSaving(true)
+      setErrorMessage('')
+      setSuccessMessage('')
+
+      const response = await fetch('/api/admin/save-route-shift-buses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          routes_id: routesId,
+          trip_date: tripDate,
+          shifts: shiftSelections.map((item) => ({
+            shift: item.shift,
+            bus_number: item.bus_number || null,
+          })),
+        }),
+      })
+
+      const text = await response.text()
+
+      let result: {
+        success: boolean
+        message: string
+      }
+
+      try {
+        result = JSON.parse(text)
+      } catch {
+        console.error('Save API returned non-JSON:', text)
+        setErrorMessage(
+          'Save API did not return JSON. Check /api/admin/save-route-shift-buses.'
+        )
+        return
+      }
+
+      if (!response.ok || !result.success) {
+        setErrorMessage(result.message || 'Failed to save route shift buses')
+        return
+      }
+
+      setSuccessMessage(result.message || 'Route shift buses saved successfully')
+
+      await fetchData()
+    } catch (error) {
+      console.error('handleSave error:', error)
+      setErrorMessage('Something went wrong while saving route shift buses')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <section className="rounded-xl bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">
-        Step 2 - Current Bus Numbers for Shifts
+        Step 2 - Select Bus for Shifts
       </h2>
 
       <div className="mb-6 space-y-2 rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
@@ -121,35 +247,58 @@ export default function SelectBusForShifts({
         <p className="mb-4 text-sm text-red-600">{errorMessage}</p>
       ) : null}
 
+      {successMessage ? (
+        <p className="mb-4 text-sm text-green-600">{successMessage}</p>
+      ) : null}
+
       {!loading && !errorMessage ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-300 text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border border-gray-300 px-4 py-2 text-left">
-                  Shift
-                </th>
+        <div className="space-y-4">
+          {shiftSelections.map((item) => (
+            <div
+              key={item.shift}
+              className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[100px_1fr_120px]"
+            >
+              <div className="text-sm font-medium text-gray-700">
+                Shift {item.shift}
+              </div>
 
-                <th className="border border-gray-300 px-4 py-2 text-left">
-                  Bus Number
-                </th>
-              </tr>
-            </thead>
+              <select
+                value={item.bus_number}
+                onChange={(e) => handleBusChange(item.shift, e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
+              >
+                <option value="">Select a bus</option>
 
-            <tbody>
-              {shifts.map((item) => (
-                <tr key={item.shift}>
-                  <td className="border border-gray-300 px-4 py-2">
-                    Shift {item.shift}
-                  </td>
+                {availableBuses.map((bus) => (
+                  <option key={bus.bus_number} value={bus.bus_number}>
+                    {bus.bus_number}
+                    {bus.seat_count ? ` - ${bus.seat_count} seats` : ''}
+                  </option>
+                ))}
+              </select>
 
-                  <td className="border border-gray-300 px-4 py-2">
-                    {item.bus_number || 'No bus assigned'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <div className="flex items-center">
+                {item.done ? (
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
+                    Done
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">
+                    Not done
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </div>
       ) : null}
     </section>
