@@ -60,7 +60,7 @@ export async function saveRouteShiftBusesService(
       }
     }
 
-    const busNumbers = validShifts.map((item) => item.bus_number)
+    const busNumbers = [...new Set(validShifts.map((item) => item.bus_number))]
 
     const { data: buses, error: busesError } = await supabase
       .from('buses')
