@@ -45,7 +45,6 @@ export default function SelectBusForShifts({
   tripDate,
 }: SelectBusForShiftsProps) {
   const [availableBuses, setAvailableBuses] = useState<BusItem[]>([])
-
   const [shiftSelections, setShiftSelections] = useState<ShiftSelection[]>([
     { shift: 1, bus_number: '', done: false },
     { shift: 2, bus_number: '', done: false },
@@ -55,6 +54,7 @@ export default function SelectBusForShifts({
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [togglingShift, setTogglingShift] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
@@ -208,13 +208,69 @@ export default function SelectBusForShifts({
       }
 
       setSuccessMessage(result.message || 'Route shift buses saved successfully')
-
       await fetchData()
     } catch (error) {
       console.error('handleSave error:', error)
       setErrorMessage('Something went wrong while saving route shift buses')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleToggleDone(shift: 1 | 2 | 3 | 4, nextDoneValue: boolean) {
+    try {
+      setTogglingShift(shift)
+      setErrorMessage('')
+      setSuccessMessage('')
+
+      const response = await fetch('/api/admin/toggle-route-shift-done', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          routes_id: routesId,
+          trip_date: tripDate,
+          shift,
+          done: nextDoneValue,
+        }),
+      })
+
+      const text = await response.text()
+
+      let result: {
+        success: boolean
+        message: string
+      }
+
+      try {
+        result = JSON.parse(text)
+      } catch {
+        console.error('Toggle done API returned non-JSON:', text)
+        setErrorMessage(
+          'Toggle done API did not return JSON. Check /api/admin/toggle-route-shift-done.'
+        )
+        return
+      }
+
+      if (!response.ok || !result.success) {
+        setErrorMessage(result.message || 'Failed to update done status')
+        return
+      }
+
+      setSuccessMessage(result.message || 'Done status updated')
+
+      setShiftSelections((prev) =>
+        prev.map((item) =>
+          item.shift === shift ? { ...item, done: nextDoneValue } : item
+        )
+      )
+    } catch (error) {
+      console.error('handleToggleDone error:', error)
+      setErrorMessage('Something went wrong while updating done status')
+    } finally {
+      setTogglingShift(null)
     }
   }
 
@@ -256,7 +312,7 @@ export default function SelectBusForShifts({
           {shiftSelections.map((item) => (
             <div
               key={item.shift}
-              className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[100px_1fr_120px]"
+              className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[100px_1fr_110px_120px]"
             >
               <div className="text-sm font-medium text-gray-700">
                 Shift {item.shift}
@@ -288,6 +344,19 @@ export default function SelectBusForShifts({
                   </span>
                 )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleDone(item.shift, !item.done)}
+                disabled={togglingShift === item.shift}
+                className="rounded-lg border border-black px-3 py-2 text-sm font-medium text-black disabled:opacity-60"
+              >
+                {togglingShift === item.shift
+                  ? 'Updating...'
+                  : item.done
+                  ? 'Not done'
+                  : 'Done'}
+              </button>
             </div>
           ))}
 
