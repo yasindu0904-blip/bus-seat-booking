@@ -81,3 +81,19 @@ create table public.routes_bus (
   constraint routes_bus_routes_id_fkey foreign KEY (routes_id) references routes (id) on update CASCADE on delete RESTRICT,
   constraint routes_bus_shift_check check ((shift = any (array[1, 2, 3, 4])))
 ) TABLESPACE pg_default;
+
+
+create index if not exists idx_buses_routes_id
+on public.buses (routes_id);
+
+create index if not exists idx_routes_bus_routes_id
+on public.routes_bus (routes_id);
+
+create index if not exists idx_routes_bus_routes_id_trip_date
+on public.routes_bus (routes_id, trip_date);
+
+create index if not exists idx_routes_route_name
+on public.routes (route_name);
+
+create index if not exists idx_routes_start_location
+on public.routes (start_location);
