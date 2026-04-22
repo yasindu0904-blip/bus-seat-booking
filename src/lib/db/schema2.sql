@@ -97,3 +97,26 @@ on public.routes (route_name);
 
 create index if not exists idx_routes_start_location
 on public.routes (start_location);
+
+
+create table public.bus_seats (
+  shift integer not null,
+  trip_date date not null,
+  bus_seats_customer_id uuid,
+  end_location text,
+
+  constraint bus_seats_pkey
+    primary key (trip_date, shift, bus_seats_customer_id),
+
+  constraint bus_seats_routes_bus_fkey
+    foreign key (trip_date, shift)
+    references public.routes_bus(trip_date, shift)
+    on update cascade
+    on delete restrict,
+
+  constraint bus_seats_customer_id_fkey
+    foreign key (bus_seats_customer_id)
+    references public.customer_profiles(id)
+    on update cascade
+    on delete restrict
+);
