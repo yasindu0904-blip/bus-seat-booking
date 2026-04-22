@@ -53,7 +53,7 @@ export default function SelectBusForShifts({
   ])
 
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [savingShift, setSavingShift] = useState<number | null>(null)
   const [togglingShift, setTogglingShift] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -162,11 +162,18 @@ export default function SelectBusForShifts({
     )
   }
 
-  async function handleSave() {
+  async function handleSaveShift(shift: 1 | 2 | 3 | 4) {
     try {
-      setSaving(true)
+      setSavingShift(shift)
       setErrorMessage('')
       setSuccessMessage('')
+
+      const shiftItem = shiftSelections.find((item) => item.shift === shift)
+
+      if (!shiftItem || !shiftItem.bus_number) {
+        setErrorMessage(`Please select a bus for shift ${shift}`)
+        return
+      }
 
       const saveResponse = await fetch('/api/admin/save-route-shift-buses', {
         method: 'POST',
@@ -177,10 +184,12 @@ export default function SelectBusForShifts({
         body: JSON.stringify({
           routes_id: routesId,
           trip_date: tripDate,
-          shifts: shiftSelections.map((item) => ({
-            shift: item.shift,
-            bus_number: item.bus_number || null,
-          })),
+          shifts: [
+            {
+              shift: shiftItem.shift,
+              bus_number: shiftItem.bus_number,
+            },
+          ],
         }),
       })
 
@@ -202,21 +211,13 @@ export default function SelectBusForShifts({
       }
 
       if (!saveResponse.ok || !saveResult.success) {
-        setErrorMessage(saveResult.message || 'Failed to save route shift buses')
+        setErrorMessage(saveResult.message || `Failed to save shift ${shift}`)
         return
       }
 
-      const seatPayload = shiftSelections.map((item) => {
-        const matchedBus = availableBuses.find(
-          (bus) => bus.bus_number === item.bus_number
-        )
-
-        return {
-          shift: item.shift,
-          bus_number: item.bus_number || null,
-          seat_count: matchedBus?.seat_count ?? null,
-        }
-      })
+      const matchedBus = availableBuses.find(
+        (bus) => bus.bus_number === shiftItem.bus_number
+      )
 
       const seatsResponse = await fetch(
         '/api/admin/create-bus-seats-for-shifts',
@@ -229,7 +230,13 @@ export default function SelectBusForShifts({
           body: JSON.stringify({
             routes_id: routesId,
             trip_date: tripDate,
-            shifts: seatPayload,
+            shifts: [
+              {
+                shift: shiftItem.shift,
+                bus_number: shiftItem.bus_number,
+                seat_count: matchedBus?.seat_count ?? null,
+              },
+            ],
           }),
         }
       )
@@ -252,17 +259,19 @@ export default function SelectBusForShifts({
       }
 
       if (!seatsResponse.ok || !seatsResult.success) {
-        setErrorMessage(seatsResult.message || 'Failed to create bus seats')
+        setErrorMessage(
+          seatsResult.message || `Failed to create seats for shift ${shift}`
+        )
         return
       }
 
-      setSuccessMessage('Route shift buses and bus seats saved successfully')
+      setSuccessMessage(`Shift ${shift} saved successfully`)
       await fetchData()
     } catch (error) {
-      console.error('handleSave error:', error)
-      setErrorMessage('Something went wrong while saving route shift buses')
+      console.error('handleSaveShift error:', error)
+      setErrorMessage(`Something went wrong while saving shift ${shift}`)
     } finally {
-      setSaving(false)
+      setSavingShift(null)
     }
   }
 
@@ -361,7 +370,7 @@ export default function SelectBusForShifts({
           {shiftSelections.map((item) => (
             <div
               key={item.shift}
-              className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[100px_1fr_110px_120px]"
+              className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[90px_1fr_110px_120px_110px]"
             >
               <div className="text-sm font-medium text-gray-700">
                 Shift {item.shift}
@@ -406,17 +415,17 @@ export default function SelectBusForShifts({
                   ? 'Not done'
                   : 'Done'}
               </button>
+
+              <button
+                type="button"
+                onClick={() => handleSaveShift(item.shift)}
+                disabled={savingShift === item.shift}
+                className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                {savingShift === item.shift ? 'Saving...' : 'Save'}
+              </button>
             </div>
           ))}
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
         </div>
       ) : null}
     </section>
