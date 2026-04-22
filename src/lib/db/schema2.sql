@@ -76,47 +76,28 @@ create table public.routes_bus (
   trip_date date not null,
   bus_number text not null,
   done boolean null default false,
-  constraint routes_bus_pkey primary key (trip_date, shift),
+  constraint routes_bus_pkey primary key (trip_date, shift, routes_id),
   constraint routes_bus_bus_number_fkey foreign KEY (bus_number) references buses (bus_number) on update CASCADE on delete RESTRICT,
   constraint routes_bus_routes_id_fkey foreign KEY (routes_id) references routes (id) on update CASCADE on delete RESTRICT,
   constraint routes_bus_shift_check check ((shift = any (array[1, 2, 3, 4])))
 ) TABLESPACE pg_default;
 
+create index IF not exists idx_routes_bus_routes_id on public.routes_bus using btree (routes_id) TABLESPACE pg_default;
 
-create index if not exists idx_buses_routes_id
-on public.buses (routes_id);
-
-create index if not exists idx_routes_bus_routes_id
-on public.routes_bus (routes_id);
-
-create index if not exists idx_routes_bus_routes_id_trip_date
-on public.routes_bus (routes_id, trip_date);
-
-create index if not exists idx_routes_route_name
-on public.routes (route_name);
-
-create index if not exists idx_routes_start_location
-on public.routes (start_location);
-
+create index IF not exists idx_routes_bus_routes_id_trip_date on public.routes_bus using btree (routes_id, trip_date) TABLESPACE pg_default;
 
 create table public.bus_seats (
+  routes_id uuid not null,
   shift integer not null,
   trip_date date not null,
-  bus_seats_customer_id uuid,
-  end_location text,
+  seat_number integer not null,
+  bus_seats_customer_id uuid null,
+  end_location text null,
+  constraint bus_seats_pkey primary key (trip_date, shift, routes_id, seat_number),
+  constraint bus_seats_customer_id_fkey foreign KEY (bus_seats_customer_id) references customer_profiles (id) on update CASCADE on delete RESTRICT,
+  constraint bus_seats_routes_bus_fkey foreign KEY (trip_date, shift, routes_id) references routes_bus (trip_date, shift, routes_id) on update CASCADE on delete RESTRICT,
+  constraint bus_seats_seat_number_check check ((seat_number >= 1)),
+  constraint bus_seats_shift_check check ((shift = any (array[1, 2, 3, 4])))
+) TABLESPACE pg_default;
 
-  constraint bus_seats_pkey
-    primary key (trip_date, shift, bus_seats_customer_id),
-
-  constraint bus_seats_routes_bus_fkey
-    foreign key (trip_date, shift)
-    references public.routes_bus(trip_date, shift)
-    on update cascade
-    on delete restrict,
-
-  constraint bus_seats_customer_id_fkey
-    foreign key (bus_seats_customer_id)
-    references public.customer_profiles(id)
-    on update cascade
-    on delete restrict
-);
+create index IF not exists idx_bus_seats_trip_date_shift_routes_id on public.bus_seats using btree (trip_date, shift, routes_id) TABLESPACE pg_default;
