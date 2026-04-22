@@ -75,7 +75,6 @@ export default function SelectBusForShifts({
             cache: 'no-store',
           }
         ),
-
         fetch(
           `/api/admin/get-buses-by-route?routes_id=${encodeURIComponent(
             routesId
@@ -169,7 +168,7 @@ export default function SelectBusForShifts({
       setErrorMessage('')
       setSuccessMessage('')
 
-      const response = await fetch('/api/admin/save-route-shift-buses', {
+      const saveResponse = await fetch('/api/admin/save-route-shift-buses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,29 +184,79 @@ export default function SelectBusForShifts({
         }),
       })
 
-      const text = await response.text()
+      const saveText = await saveResponse.text()
 
-      let result: {
+      let saveResult: {
         success: boolean
         message: string
       }
 
       try {
-        result = JSON.parse(text)
+        saveResult = JSON.parse(saveText)
       } catch {
-        console.error('Save API returned non-JSON:', text)
+        console.error('Save API returned non-JSON:', saveText)
         setErrorMessage(
           'Save API did not return JSON. Check /api/admin/save-route-shift-buses.'
         )
         return
       }
 
-      if (!response.ok || !result.success) {
-        setErrorMessage(result.message || 'Failed to save route shift buses')
+      if (!saveResponse.ok || !saveResult.success) {
+        setErrorMessage(saveResult.message || 'Failed to save route shift buses')
         return
       }
 
-      setSuccessMessage(result.message || 'Route shift buses saved successfully')
+      const seatPayload = shiftSelections.map((item) => {
+        const matchedBus = availableBuses.find(
+          (bus) => bus.bus_number === item.bus_number
+        )
+
+        return {
+          shift: item.shift,
+          bus_number: item.bus_number || null,
+          seat_count: matchedBus?.seat_count ?? null,
+        }
+      })
+
+      const seatsResponse = await fetch(
+        '/api/admin/create-bus-seats-for-shifts',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            routes_id: routesId,
+            trip_date: tripDate,
+            shifts: seatPayload,
+          }),
+        }
+      )
+
+      const seatsText = await seatsResponse.text()
+
+      let seatsResult: {
+        success: boolean
+        message: string
+      }
+
+      try {
+        seatsResult = JSON.parse(seatsText)
+      } catch {
+        console.error('Create seats API returned non-JSON:', seatsText)
+        setErrorMessage(
+          'Create seats API did not return JSON. Check /api/admin/create-bus-seats-for-shifts.'
+        )
+        return
+      }
+
+      if (!seatsResponse.ok || !seatsResult.success) {
+        setErrorMessage(seatsResult.message || 'Failed to create bus seats')
+        return
+      }
+
+      setSuccessMessage('Route shift buses and bus seats saved successfully')
       await fetchData()
     } catch (error) {
       console.error('handleSave error:', error)

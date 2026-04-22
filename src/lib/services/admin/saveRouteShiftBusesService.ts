@@ -98,7 +98,7 @@ export async function saveRouteShiftBusesService(
     const { error: upsertError } = await supabase.from('routes_bus').upsert(
       validShifts,
       {
-        onConflict: 'trip_date,shift',
+        onConflict: 'trip_date,shift,routes_id',
       }
     )
 
