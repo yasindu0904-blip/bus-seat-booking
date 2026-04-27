@@ -1,4 +1,5 @@
 'use client'
+import AdminHeader from '@/components/admin/AdminHeader'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -58,6 +59,7 @@ export default function AddAdminPage() {
   return (
     <main className="min-h-screen bg-gray-200 text-[#161d18]">
       <div className="mx-auto min-h-screen w-full max-w-md bg-[#f4fbf3] px-5 pb-10 pt-6">
+        <AdminHeader />
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Add Admin</h1>
 
